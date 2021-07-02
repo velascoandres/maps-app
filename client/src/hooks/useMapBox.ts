@@ -1,17 +1,33 @@
-import { useCallback } from 'react';
-import mapboxgl from 'mapbox-gl';
-import { useRef, useState, useEffect } from "react";
+import React, { useCallback, useRef, useState, useEffect } from 'react';
+
+import mapboxgl, { MapMouseEvent } from 'mapbox-gl';
+import { v4 as uuidv4 } from 'uuid';
+import { Subject } from 'rxjs';
+
 
 export type Coords = { lng: number; lat: number; zoom: number };
+export type MarkerLocation = { lng: number; lat: number; id?: string };
 
 export type UseMapOut = {
     coords: Coords;
-    setRef: (node: HTMLDivElement) => void
+    markersRef: React.MutableRefObject<MetaMarker>,
+    newMarker$: Subject<CustomMarker>,
+    markerMove$: Subject<MarkerLocation>,
+    setRef: (node: HTMLDivElement) => void,
+    addMarkers: (event: MapMouseEvent) => void,
 };
 
 export type UseMapProps = {
     initialCoords?: Coords;
 }
+
+export type CustomMarker = mapboxgl.Marker & { id?: string };
+
+
+
+export type MetaMarker = Record<string, CustomMarker>;
+
+
 
 
 const defaultCoords = { lng: 0, lat: 0, zoom: 0 };
@@ -34,6 +50,46 @@ export const useMapBox = (initialCoords: Coords = defaultCoords): UseMapOut => {
 
     const [coords, setCoords] = useState<Coords>(initialCoords);
 
+    // Reference to markers
+    const markersRef = useRef<MetaMarker>({});
+
+    // Observables Rxjs
+    const markerMove = useRef(new Subject<MarkerLocation>());
+    const newMarker = useRef(new Subject<CustomMarker>());
+
+
+    // function to add markers
+    const addMarkers = useCallback(
+        (event: MapMouseEvent) => {
+
+            const { lat, lng } = event.lngLat;
+            const marker: CustomMarker = new mapboxgl.Marker();
+            marker
+                .setLngLat([lng, lat])
+                .addTo(mapRef.current as mapboxgl.Map)
+                .setDraggable(true);
+
+            // TODO: si el marcador ya tiene ID
+            const markerId = uuidv4();
+            marker.id = markerId;
+            markersRef.current[markerId] = marker;
+
+            // TODO: si el marcador tiene ID no emitir
+            newMarker.current.next(marker);
+
+            // listen marker drags event
+            marker.on('drag', (event: any) => {
+                const currentMarker = event.target as CustomMarker;
+                const { lng, lat } = currentMarker.getLngLat();
+                const { id } = currentMarker;
+                // TODO: emitir los cambios del marcador
+                markerMove.current.next({id, lat, lng});
+            });
+
+        },
+        [],
+    )
+    // init map
     useEffect(() => {
         const mapboxMap = new mapboxgl.Map({
             container: mapDiv.current as HTMLDivElement,
@@ -63,8 +119,18 @@ export const useMapBox = (initialCoords: Coords = defaultCoords): UseMapOut => {
             map?.off('move', () => { });
         }
     }, []);
+
+    // add markers when make a click
+    useEffect(() => {
+        mapRef.current?.on('click', addMarkers);
+    }, [addMarkers]);
+
     return {
         coords,
+        markersRef,
         setRef,
+        addMarkers,
+        newMarker$: newMarker.current,
+        markerMove$: markerMove.current,
     }
 }
