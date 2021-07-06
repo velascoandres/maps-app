@@ -83,7 +83,7 @@ export const useMapBox = (initialCoords: Coords = defaultCoords): UseMapOut => {
                 const { lng, lat } = currentMarker.getLngLat();
                 const { id } = currentMarker;
                 // TODO: emitir los cambios del marcador
-                markerMove.current.next({id, lat, lng});
+                markerMove.current.next({ id, lat, lng });
             });
 
         },

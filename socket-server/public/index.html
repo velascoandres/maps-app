@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- CSS only -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+    <title>MiniChat</title>
+  </head>
+  <body class="container">
+    <h1 class="mt-5">MiniChat</h1>
+    <hr />
+
+    <form id="myForm" action="">
+      <div class="row">
+        <div class="col-8">
+          <input
+            class="form-control"
+            type="text"
+            name="message"
+            id="message"
+            placeholder="Message"
+          />
+        </div>
+
+        <div class="col-4">
+          <button class="btn btn-primary">Enviar</button>
+        </div>
+      </div>
+    </form>
+
+    <div class="row">
+      <div class="col">
+        <ul id="messages" class="mt-2">
+        </ul>
+      </div>
+    </div>
+
+    <!-- JavaScript Bundle with Popper -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"
+      integrity="sha512-iZIBSs+gDyTH0ZhUem9eQ1t4DcEn2B9lHxfRMeGQhyNdSUz+rb+5A3ummX6DQTOIs1XK0gOteOg/LPtSo9VJ+w=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+
+    <script>
+      const socket = io("http://localhost:8100");
+
+      // DOM elements reference
+      const form = document.querySelector("#myForm");
+      const messages = document.querySelector("#messages");
+      const message = document.querySelector("#message");
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const txtMessage = message.value;
+        socket.emit("message", { msg: txtMessage });
+      });
+
+      socket.on("welcome", (payload) => {
+        console.log(payload);
+      });
+
+      socket.on("messages-from-server", (payload) => {
+        messages.innerHTML += `<li>${payload.msg}</li>`;
+      });
+
+      //   setTimeout(() => {
+      //     console.log("emit");
+      //     socket.emit("message", { msg: "client", name: "andres" });
+      //   }, 2000);
+
+      //   socket.on("message", (payload) => {
+      //     console.log(payload);
+      //   });
+    </script>
+  </body>
+</html>
