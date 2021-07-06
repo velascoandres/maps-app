@@ -24,10 +24,13 @@ class Sockets {
                     socket.broadcast.emit('new-marker', newMarker);
                 }
             );
-            // TODO: create-marker
-
-            // TODO: update-marker
-
+            // update-marker
+            socket.on(
+                'update-marker', ({ marker }: { marker: Marker }) => {
+                    const updatedMarker = this.markerRepository.update(marker.id, marker);
+                    socket.broadcast.emit('update-marker', updatedMarker);
+                }
+            );
         });
     }
 

@@ -10,11 +10,12 @@ export type MarkerLocation = { lng: number; lat: number; id?: string };
 
 export type UseMapOut = {
     coords: Coords;
-    markersRef: React.MutableRefObject<MetaMarker>,
-    newMarker$: Subject<CustomMarker>,
-    markerMove$: Subject<MarkerLocation>,
-    setRef: (node: HTMLDivElement) => void,
-    addMarkers: (event: { id?: string; lngLat: { lat: number, lng: number } }) => void,
+    markersRef: React.MutableRefObject<MetaMarker>;
+    newMarker$: Subject<CustomMarker>;
+    markerMove$: Subject<MarkerLocation>;
+    setRef: (node: HTMLDivElement) => void;
+    updateMarker: (payload: { id: string; lat: number; lng: number }) => void;
+    addMarkers: (event: { id?: string; lngLat: { lat: number, lng: number } }) => void;
 };
 
 export type UseMapProps = {
@@ -57,7 +58,6 @@ export const useMapBox = (initialCoords: Coords = defaultCoords): UseMapOut => {
     const markerMove = useRef(new Subject<MarkerLocation>());
     const newMarker = useRef(new Subject<CustomMarker>());
 
-
     // function to add markers
     const addMarkers = useCallback(
         (event: { id?: string; lngLat: { lat: number, lng: number } }) => {
@@ -85,13 +85,21 @@ export const useMapBox = (initialCoords: Coords = defaultCoords): UseMapOut => {
                 const currentMarker = event.target as CustomMarker;
                 const { lng, lat } = currentMarker.getLngLat();
                 const { id } = currentMarker;
-                // TODO: emitir los cambios del marcador
+                // emitir los cambios del marcador
                 markerMove.current.next({ id, lat, lng });
             });
 
         },
         [],
-    )
+    );
+
+    // function for update the location of a marker
+    const updateMarker = useCallback(
+        ({ id, lat, lng, }: { id: string; lat: number; lng: number }) => {
+            markersRef.current[id].setLngLat([lng, lat]);
+        }, [],
+    );
+
     // init map
     useEffect(() => {
         const mapboxMap = new mapboxgl.Map({
@@ -135,5 +143,6 @@ export const useMapBox = (initialCoords: Coords = defaultCoords): UseMapOut => {
         addMarkers,
         newMarker$: newMarker.current,
         markerMove$: markerMove.current,
+        updateMarker,
     }
 }

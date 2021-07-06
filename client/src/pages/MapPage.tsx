@@ -13,14 +13,14 @@ mapboxgl.accessToken = REACT_APP_MAPBOX_API_KEY as string;
 
 export const MapPage: React.FC = () => {
 
-    const { addMarkers, coords, setRef, newMarker$, markerMove$ } = useMapBox();
+    const { addMarkers, coords, setRef, newMarker$, markerMove$, updateMarker } = useMapBox();
     const { socket } = useContext(SocketContext);
 
     // listen existing markers
     useEffect(() => {
         socket.on('list-markers', (markersCollection: Record<string, MarkerJson>) => {
             // add markers
-            for (const id in markersCollection ){
+            for (const id in markersCollection) {
                 const marker = markersCollection[id];
                 console.log(marker);
                 addMarkers(marker);
@@ -37,7 +37,7 @@ export const MapPage: React.FC = () => {
         newMarker$
             .subscribe(
                 (marker: CustomMarker) => {
-                   socket.emit('create-marker', { marker: markerToJson(marker) });
+                    socket.emit('create-marker', { marker: markerToJson(marker) });
                 }
             );
 
@@ -51,14 +51,14 @@ export const MapPage: React.FC = () => {
         markerMove$
             .subscribe(
                 ({ id, lat, lng }: MarkerLocation) => {
-                    console.log('Move ', id);
+                    socket.emit('update-marker', { marker: { id, lngLat: { lat, lng } } });
                 }
             );
 
         return () => {
             markerMove$.unsubscribe();
         }
-    }, [markerMove$]);
+    }, [markerMove$, socket]);
     // listen new marker
     useEffect(() => {
         socket.on('new-marker', (marker: MarkerJson) => {
@@ -69,6 +69,17 @@ export const MapPage: React.FC = () => {
             socket.off('new-marker');
         }
     }, [socket, addMarkers]);
+    // listen update markers
+    useEffect(() => {
+        socket.on('update-marker', (marker: MarkerJson) => {
+            const { id } = marker;
+            const { lat, lng } = marker.lngLat;
+            updateMarker({ id: id as string, lat, lng });
+        });
+        return () => {
+            socket.off('new-marker');
+        }
+    }, [socket, updateMarker]);
 
     return (
         <>
