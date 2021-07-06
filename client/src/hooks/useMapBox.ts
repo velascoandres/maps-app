@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react';
 
-import mapboxgl, { MapMouseEvent } from 'mapbox-gl';
+import mapboxgl from 'mapbox-gl';
 import { v4 as uuidv4 } from 'uuid';
 import { Subject } from 'rxjs';
 
@@ -14,7 +14,7 @@ export type UseMapOut = {
     newMarker$: Subject<CustomMarker>,
     markerMove$: Subject<MarkerLocation>,
     setRef: (node: HTMLDivElement) => void,
-    addMarkers: (event: MapMouseEvent) => void,
+    addMarkers: (event: { id?: string; lngLat: { lat: number, lng: number } }) => void,
 };
 
 export type UseMapProps = {
@@ -60,7 +60,7 @@ export const useMapBox = (initialCoords: Coords = defaultCoords): UseMapOut => {
 
     // function to add markers
     const addMarkers = useCallback(
-        (event: MapMouseEvent) => {
+        (event: { id?: string; lngLat: { lat: number, lng: number } }) => {
 
             const { lat, lng } = event.lngLat;
             const marker: CustomMarker = new mapboxgl.Marker();
@@ -69,13 +69,16 @@ export const useMapBox = (initialCoords: Coords = defaultCoords): UseMapOut => {
                 .addTo(mapRef.current as mapboxgl.Map)
                 .setDraggable(true);
 
-            // TODO: si el marcador ya tiene ID
-            const markerId = uuidv4();
+            // si el marcador ya tiene ID
+            const markerId = event.id ? event.id : uuidv4();
+            console.log(markerId);
             marker.id = markerId;
             markersRef.current[markerId] = marker;
 
-            // TODO: si el marcador tiene ID no emitir
-            newMarker.current.next(marker);
+            // si el marcador tiene ID no emitir
+            if (!event.id) {
+                newMarker.current.next(marker);
+            }
 
             // listen marker drags event
             marker.on('drag', (event: any) => {

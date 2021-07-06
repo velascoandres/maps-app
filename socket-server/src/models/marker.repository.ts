@@ -15,19 +15,27 @@ interface Repository<T> {
 
 class MarkerRepository implements Repository<Marker>{
 
-    private readonly collection: Collection<Marker> = initialCollection;
+    private readonly _collection: Collection<Marker> = initialCollection;
 
     MarkerRepository() { }
 
     create(marker: Marker): Marker {
-        this.collection[marker.id] = marker;
+        this._collection[marker.id] = new Marker(
+            marker.id,
+            {
+                ...marker.lngLat,
+            },
+        );
         return marker;
     };
 
     update(id: string, marker: Marker): Marker {
-        const entryToUpdate = this.collection[id];
+        const entryToUpdate = this._collection[id];
         if (entryToUpdate) {
-            this.collection[id] = marker;
+            this._collection[id].id = id;
+            this._collection[id].lngLat = {
+                ...marker.lngLat,
+            };
             return marker;
         } else {
             throw Error('entry does not exist');
@@ -35,17 +43,21 @@ class MarkerRepository implements Repository<Marker>{
     };
 
     delete(id: string): void {
-        const markerToDelete = this.collection[id];
+        const markerToDelete = this._collection[id];
         if (markerToDelete) {
-            delete this.collection[id];
+            delete this._collection[id];
         } else {
             throw Error('marker does not exist');
         }
     };
 
-    list(params: { [x: string]: any; }): Marker[] {
-        return Object.values(this.collection);
+    list(params?: { [x: string]: any; }): Marker[] {
+        return Object.values(this._collection);
     };
+
+    get collection(): Collection<Marker> {
+        return this._collection;
+    }
 
 }
 

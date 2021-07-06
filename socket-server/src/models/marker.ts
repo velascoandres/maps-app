@@ -4,7 +4,7 @@ class Marker {
 
     constructor(
         public id: string,
-        public latLng: LatLng,
+        public lngLat: LatLng,
     ) {
     }
     
